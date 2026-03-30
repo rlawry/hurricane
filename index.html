@@ -6,16 +6,20 @@
   <title>Atlantic Hurricane Tracker</title>
   <style>
     :root {
-      --bg: #374b67;
-      --bg-2: #d9e5f0;
-      --panel: rgba(252, 254, 255, 0.97);
-      --panel-2: rgba(29, 79, 122, 0.055);
-      --text: #1d2d3c;
-      --muted: #5c6f82;
-      --line: rgba(48, 82, 112, 0.18);
-      --accent: #1f5f96;
-      --accent-2: #17456d;
-      --accent-3: #c8892e;
+      --bg: #7f92a3;
+      --bg-2: #a9b8c4;
+      --bg-3: #667988;
+      --panel: rgba(229, 238, 244, 0.86);
+      --panel-2: rgba(76, 99, 117, 0.10);
+      --text: #152733;
+      --muted: #405866;
+      --line: rgba(38, 63, 80, 0.22);
+      --accent: #37586a;
+      --accent-2: #57788f;
+      --accent-3: #8fa6b5;
+      --sea-1: #1d3446;
+      --sea-2: #163043;
+      --sea-3: #0f2534;
     }
 
     * { box-sizing: border-box; }
@@ -23,39 +27,79 @@
     body {
       margin: 0;
       min-height: 100vh;
-      overflow-x: hidden;
-      position: relative;
       font-family: Arial, Helvetica, sans-serif;
       background:
-        radial-gradient(circle at top, rgba(165,165,165,0.72) 0%, rgba(120,120,120,0) 34%),
-        linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+        radial-gradient(1200px 520px at 18% 6%, rgba(246, 250, 252, 0.34) 0%, rgba(246, 250, 252, 0.12) 34%, rgba(246, 250, 252, 0) 65%),
+        radial-gradient(980px 420px at 78% 10%, rgba(236, 244, 247, 0.28) 0%, rgba(236, 244, 247, 0.10) 32%, rgba(236, 244, 247, 0) 62%),
+        linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 44%, var(--bg-3) 100%);
       color: var(--text);
+      overflow-x: hidden;
+      position: relative;
     }
 
-    #rainCanvas {
+    #weatherCanvas {
       position: fixed;
       inset: 0;
       width: 100vw;
       height: 100vh;
       pointer-events: none;
       z-index: 0;
-      opacity: 0.62;
-      mix-blend-mode: multiply;
+      opacity: 0.98;
+      filter: saturate(1.05) contrast(1.02);
+    }
+
+    .ocean {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 132px;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(19, 43, 58, 0) 0%, rgba(19, 43, 58, 0.18) 16%, var(--sea-1) 46%, var(--sea-2) 72%, var(--sea-3) 100%);
+    }
+
+    .ocean::before,
+    .ocean::after {
+      content: '';
+      position: absolute;
+      left: -10%;
+      width: 120%;
+      background-repeat: repeat-x;
+      opacity: 0.88;
+    }
+
+    .ocean::before {
+      bottom: 54px;
+      height: 50px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 50'%3E%3Cpath d='M0 28 C20 12 40 12 60 28 S100 44 120 28 S160 12 180 28 S220 44 240 28 V50 H0 Z' fill='%23223f54'/%3E%3C/svg%3E");
+      background-size: 240px 50px;
+      animation: waveDrift 12s linear infinite;
+    }
+
+    .ocean::after {
+      bottom: 16px;
+      height: 64px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 64'%3E%3Cpath d='M0 34 C24 18 48 18 72 34 S120 50 150 34 S210 18 240 34 S276 48 300 34 V64 H0 Z' fill='%230f2534'/%3E%3Cpath d='M0 39 C24 26 48 26 72 39 S120 52 150 39 S210 26 240 39 S276 52 300 39' fill='none' stroke='rgba(196,221,233,0.16)' stroke-width='2'/%3E%3C/svg%3E");
+      background-size: 300px 64px;
+      animation: waveDriftReverse 18s linear infinite;
     }
 
     .page {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 20px;
-      overflow: visible;
       position: relative;
       z-index: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 20px 20px 162px;
     }
 
     h1 {
       margin: 0 0 6px;
       font-size: clamp(1.45rem, 2.8vw, 2.45rem);
       line-height: 1.15;
+      color: #eef6fb;
+      text-shadow: 0 1px 0 rgba(18, 35, 46, 0.25);
     }
 
     .sub {
@@ -69,8 +113,6 @@
       grid-template-columns: minmax(0, 1fr) 360px;
       gap: 18px;
       align-items: start;
-      position: relative;
-      z-index: 1;
     }
 
     .viewer,
@@ -79,16 +121,15 @@
       border: 1px solid var(--line);
       border-radius: 0;
       overflow: visible;
-      box-shadow: 0 16px 34px rgba(34, 57, 82, 0.12);
-      backdrop-filter: blur(3px);
-      position: relative;
-      z-index: 1;
+      box-shadow: 0 18px 36px rgba(20, 38, 51, 0.16);
+      backdrop-filter: blur(5px);
     }
 
     .viewer-header,
     .panel-header {
       padding: 14px 16px;
       border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(236, 244, 248, 0.60) 0%, rgba(220, 231, 238, 0.34) 100%);
     }
 
     .viewer-header strong,
@@ -110,11 +151,27 @@
     .map-wrap {
       position: relative;
       width: 100%;
-      background: #f8fbfe;
+      background: #d5e0e8;
+      overflow: hidden;
+      aspect-ratio: 3300 / 2110;
+    }
+
+    .map-wrap::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: rgba(20, 38, 51, 0.16);
+      pointer-events: none;
     }
 
     .map-wrap img {
       display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: auto;
       user-select: none;
@@ -129,21 +186,21 @@
       pointer-events: none;
     }
 
-    .topbar {
+    .controls-shell {
+      position: relative;
+      z-index: 90;
+      margin: 0 0 18px;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 0;
-      box-shadow: 0 16px 34px rgba(34, 57, 82, 0.12);
-      backdrop-filter: blur(3px);
-      margin-bottom: 18px;
+      box-shadow: 0 18px 36px rgba(20, 38, 51, 0.16);
+      backdrop-filter: blur(5px);
       overflow: visible;
-      position: relative;
-      z-index: 4000;
     }
 
     .controls {
       position: relative;
-      z-index: 4100;
+      z-index: 91;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -167,11 +224,12 @@
     button,
     .dropdown-toggle {
       border: 1px solid var(--line);
-      background: #ffffff;
+      background: rgba(238, 245, 248, 0.92);
       color: var(--text);
       border-radius: 0;
       padding: 10px 12px;
       font-size: 0.92rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
     }
 
     select {
@@ -186,21 +244,19 @@
     button:hover,
     .dropdown-toggle:hover,
     select:hover {
-      background: #eef5fb;
+      background: rgba(226, 236, 242, 0.98);
     }
 
     button.primary {
-      background: var(--accent);
-      border-color: rgba(31, 95, 150, 0.22);
-      color: #ffffff;
-      font-weight: 700;
+      background: #37586a;
+      color: #f2f8fb;
+      border-color: rgba(23, 46, 63, 0.24);
       border-radius: 0;
       padding-inline: 14px;
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
     }
 
     button.primary:hover {
-      background: #2a73b1;
+      background: #44697e;
     }
 
     .speed-wrap {
@@ -225,16 +281,35 @@
       display: inline-flex;
     }
 
-    .graph-controls label,
-    .control-toggle {
+    .graph-controls label {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       cursor: pointer;
       user-select: none;
-      color: var(--muted);
-      font-size: 0.88rem;
-      white-space: nowrap;
+    }
+
+
+    .footer-note {
+      margin-top: 14px;
+      color: rgba(230, 240, 246, 0.94);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      text-shadow: 0 1px 0 rgba(9, 18, 24, 0.28);
+    }
+
+    .footer-note a {
+      color: #f3fbff;
+    }
+
+    @keyframes waveDrift {
+      from { background-position-x: 0; }
+      to { background-position-x: 240px; }
+    }
+
+    @keyframes waveDriftReverse {
+      from { background-position-x: 0; }
+      to { background-position-x: -300px; }
     }
 
     input[type="range"] {
@@ -243,7 +318,6 @@
 
     .dropdown {
       position: relative;
-      z-index: 4200;
     }
 
     .dropdown-toggle {
@@ -261,12 +335,12 @@
       top: calc(100% + 8px);
       min-width: 290px;
       max-width: 360px;
-      background: #ffffff;
+      background: #fbf7ef;
       border: 1px solid var(--line);
       border-radius: 0;
-      box-shadow: 0 12px 26px rgba(34, 57, 82, 0.16);
+      box-shadow: 0 10px 22px rgba(66, 57, 39, 0.16);
       padding: 12px;
-      z-index: 5000;
+      z-index: 200;
       display: none;
     }
 
@@ -300,8 +374,8 @@
       align-items: center;
       gap: 10px;
       padding: 8px 10px;
-      background: rgba(29, 79, 122, 0.045);
-      border: 1px solid rgba(48, 82, 112, 0.12);
+      background: rgba(86, 106, 110, 0.06);
+      border: 1px solid rgba(82, 99, 104, 0.16);
       border-radius: 0;
     }
 
@@ -374,11 +448,44 @@
 
     .legend-item {
       padding: 11px 12px;
-      background: rgba(29, 79, 122, 0.03);
+      background: rgba(255,255,255,0.04);
       border: 1px solid var(--line);
       border-radius: 0;
       display: grid;
-      grid-template-columns: 118px minmax(0, 1fr);
+      gap: 6px;
+    }
+
+    .legend-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .legend-title {
+      font-size: 0.94rem;
+      font-weight: 700;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .legend-sub {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+      font-size: 0.84rem;
+      color: #2e4048;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: minmax(0, 122px) minmax(0, 1fr);
       gap: 12px;
       align-items: start;
     }
@@ -390,28 +497,15 @@
       min-width: 0;
     }
 
-    .legend-name {
-      font-size: 0.96rem;
-      font-weight: 700;
-      min-width: 0;
-      word-break: break-word;
-      line-height: 1.25;
-    }
-
     .legend-right {
       display: grid;
       gap: 4px;
       min-width: 0;
       font-size: 0.84rem;
-      color: #284153;
+      color: #2e4048;
     }
 
-    .legend-line {
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .legend-line.strong {
+    .legend-right .status-line {
       font-weight: 700;
     }
 
@@ -429,21 +523,37 @@
       border-radius: 0;
       font-size: 0.74rem;
       letter-spacing: 0.03em;
-      color: #1d2d3c;
-      background: rgba(29, 79, 122, 0.06);
+      color: #24333a;
+      background: rgba(86, 106, 110, 0.08);
       vertical-align: middle;
     }
 
     .footer-note {
-      margin-top: 2px;
-      color: var(--muted);
+      margin-top: 14px;
+      padding: 10px 14px;
+      color: rgba(233, 242, 247, 0.95);
       font-size: 0.82rem;
-      line-height: 1.5;
+      line-height: 1.55;
+      background: rgba(22, 42, 57, 0.42);
+      border: 1px solid rgba(202, 226, 239, 0.14);
+      backdrop-filter: blur(3px);
+      text-shadow: 0 1px 0 rgba(7, 14, 18, 0.35);
+    }
+
+    .footer-note a {
+      color: #f4fbff;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(244, 251, 255, 0.35);
+    }
+
+    .footer-note a:hover {
+      color: #ffffff;
+      border-bottom-color: rgba(255, 255, 255, 0.7);
     }
 
     code {
       font-family: Consolas, Monaco, monospace;
-      color: #8c4f14;
+      color: #8b5e34;
     }
 
     .hidden-ui {
@@ -487,47 +597,46 @@
   </style>
 </head>
 <body>
-  <canvas id="rainCanvas" aria-hidden="true"></canvas>
+  <canvas id="weatherCanvas" aria-hidden="true"></canvas>
+  <div class="ocean" aria-hidden="true"></div>
   <div class="page">
     <h1>Atlantic Hurricane Tracker</h1>
+    <div class="controls-shell">
+        <div class="controls">
+          <div class="control-group">
+            <label class="control-label" for="yearSelect">Year</label>
+            <select id="yearSelect"></select>
+          </div>
 
-    <div class="topbar">
-      <div class="controls">
-        <div class="control-group">
-          <label class="control-label" for="yearSelect">Year</label>
-          <select id="yearSelect"></select>
-        </div>
-
-        <div class="control-group dropdown" id="stormDropdown">
-          <button type="button" class="dropdown-toggle" id="stormDropdownBtn">
-            <span id="stormDropdownLabel">Select storms</span>
-            <span>▾</span>
-          </button>
-          <div class="dropdown-panel">
-            <div class="dropdown-actions">
-              <button type="button" id="selectAllBtn">Select all</button>
-              <button type="button" id="clearAllBtn">Clear all</button>
+          <div class="control-group dropdown" id="stormDropdown">
+            <button type="button" class="dropdown-toggle" id="stormDropdownBtn">
+              <span id="stormDropdownLabel">Select storms</span>
+              <span>▾</span>
+            </button>
+            <div class="dropdown-panel">
+              <div class="dropdown-actions">
+                <button type="button" id="selectAllBtn">Select all</button>
+                <button type="button" id="clearAllBtn">Clear all</button>
+              </div>
+              <div class="storm-checklist" id="stormChecklist"></div>
             </div>
-            <div class="storm-checklist" id="stormChecklist"></div>
+          </div>
+
+          <button class="primary" id="playBtn">Play</button>
+          <button id="pauseBtn">Pause</button>
+          <button id="resetBtn">Reset</button>
+          <button id="graphToggleBtn">Graph</button>
+          <div class="graph-controls" id="graphControls">
+            <label><input type="checkbox" id="pressureToggle" checked /> Pressure</label>
+            <label><input type="checkbox" id="windToggle" checked /> Wind</label>
+          </div>
+
+          <div class="speed-wrap">
+            <label for="speedRange">Speed</label>
+            <input id="speedRange" type="range" min="0.4" max="3" step="0.1" value="1" />
+            <span id="speedValue">1.0×</span>
           </div>
         </div>
-
-        <button class="primary" id="playBtn">Play</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="resetBtn">Reset</button>
-        <label class="control-toggle"><input type="checkbox" id="hideNamesToggle" /> Hide Names</label>
-        <button id="graphToggleBtn">Graph</button>
-        <div class="graph-controls" id="graphControls">
-          <label><input type="checkbox" id="pressureToggle" checked /> Pressure</label>
-          <label><input type="checkbox" id="windToggle" checked /> Wind</label>
-        </div>
-
-        <div class="speed-wrap">
-          <label for="speedRange">Speed</label>
-          <input id="speedRange" type="range" min="0.4" max="3" step="0.1" value="1" />
-          <span id="speedValue">1.0×</span>
-        </div>
-      </div>
     </div>
 
     <div class="layout">
@@ -568,22 +677,26 @@
         </div>
       </aside>
     </div>
+    <div class="footer-note">Data source: NOAA National Hurricane Center Atlantic HURDAT2 best-track database; season files on this page are derived from the official Atlantic HURDAT2 archive. <a href="https://www.nhc.noaa.gov/data/" target="_blank" rel="noopener noreferrer">NHC Data Archive</a> · <a href="https://www.nhc.noaa.gov/data/hurdat/" target="_blank" rel="noopener noreferrer">Atlantic HURDAT2 files</a>.</div>
   </div>
 
   <script>
     const mapMeta = {"left":137,"right":3174,"top":577,"bottom":2075,"lonWestMax":105,"lonWestMin":10,"latNorthMax":50,"latNorthMin":5,"imageWidth":3300,"imageHeight":2550};
+    const mapCrop = { left: 0, top: 0, right: 3300, bottom: 2110, width: 3300, height: 2110 };
     const AVAILABLE_YEARS = [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010];
     const COLOR_PALETTE = [
-      '#e63946', '#ff7f11', '#ffb703', '#2a9d8f', '#00b4d8',
-      '#4361ee', '#8338ec', '#ff006e', '#8ac926', '#fb5607',
-      '#3a86ff', '#6a4c93', '#f72585', '#4cc9f0', '#43aa8b'
+      '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+      '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+      '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+      '#ec4899', '#f43f5e'
     ];
 
+    const weatherCanvas = document.getElementById('weatherCanvas');
+    const weatherCtx = weatherCanvas.getContext('2d');
+    const mapWrap = document.querySelector('.map-wrap');
     const mapImage = document.getElementById('mapImage');
     const canvas = document.getElementById('trackCanvas');
     const ctx = canvas.getContext('2d');
-    const rainCanvas = document.getElementById('rainCanvas');
-    const rainCtx = rainCanvas.getContext('2d');
 
     const yearSelect = document.getElementById('yearSelect');
     const stormDropdown = document.getElementById('stormDropdown');
@@ -614,18 +727,15 @@
     const legendList = document.getElementById('legendList');
 
     const baseDurationMs = 22000;
-    const rainDrops = [];
-    let rainFrame = null;
-    let rainLastTs = 0;
     let animationFrame = null;
+    let weatherAnimationFrame = null;
     let playing = false;
-    let progress = 0;
+    let currentElapsedDays = 0;
     let lastTs = 0;
     let speedMultiplier = Number(speedRange.value);
     let showGraph = false;
     let showPressureGraph = true;
     let showWindGraph = true;
-    let hideNames = false;
 
     let seasonData = null;
     let selectedYear = AVAILABLE_YEARS[0];
@@ -643,7 +753,7 @@
     }
 
     function resizeCanvas() {
-      const rect = mapImage.getBoundingClientRect();
+      const rect = mapWrap.getBoundingClientRect();
       const ratio = window.devicePixelRatio || 1;
       canvas.width = Math.round(rect.width * ratio);
       canvas.height = Math.round(rect.height * ratio);
@@ -653,135 +763,78 @@
       draw();
     }
 
-    function rainGustState(ts = performance.now()) {
-      const t = ts / 1000;
-      const gust = 0.6 + 0.24 * Math.sin(t * 0.34) + 0.16 * Math.sin(t * 0.97 + 0.8) + 0.08 * Math.sin(t * 2.2 + 1.7);
-      const angleDeg = 14 + 10 * Math.sin(t * 0.28 + 0.5) + 7 * Math.sin(t * 0.83);
-      const speed = 780 + gust * 260;
-      return {
-        gust,
-        angleDeg,
-        speed,
-        radians: angleDeg * Math.PI / 180
-      };
-    }
-
-    function makeRainDrop(initialFill = false) {
-      const width = rainCanvas.clientWidth || window.innerWidth || 1;
-      const height = rainCanvas.clientHeight || window.innerHeight || 1;
-      return {
-        x: Math.random() * (width + 220) - 140,
-        y: initialFill ? Math.random() * (height + 160) - 120 : -Math.random() * height * 0.35 - 40,
-        length: 12 + Math.random() * 24,
-        speedScale: 0.72 + Math.random() * 0.7,
-        driftScale: 0.8 + Math.random() * 0.65,
-        thickness: 0.75 + Math.random() * 1.15,
-        alpha: 1 //+ Math.random() * 0.24
-      };
-    }
-
-    function seedRainDrops() {
-      const width = rainCanvas.clientWidth || window.innerWidth || 1;
-      const height = rainCanvas.clientHeight || window.innerHeight || 1;
-      const targetCount = Math.max(140, Math.round((width * height) / 7200));
-      if (rainDrops.length > targetCount) {
-        rainDrops.length = targetCount;
-      }
-      while (rainDrops.length < targetCount) {
-        rainDrops.push(makeRainDrop(true));
-      }
-    }
-
-    function resizeRainCanvas() {
+    function resizeWeatherCanvas() {
       const ratio = window.devicePixelRatio || 1;
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      rainCanvas.width = Math.round(width * ratio);
-      rainCanvas.height = Math.round(height * ratio);
-      rainCanvas.style.width = width + 'px';
-      rainCanvas.style.height = height + 'px';
-      rainCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      seedRainDrops();
+      weatherCanvas.width = Math.round(window.innerWidth * ratio);
+      weatherCanvas.height = Math.round(window.innerHeight * ratio);
+      weatherCanvas.style.width = window.innerWidth + 'px';
+      weatherCanvas.style.height = window.innerHeight + 'px';
+      weatherCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      initRainDrops();
     }
 
-    function drawRain(ts = performance.now()) {
-      if (!rainCanvas.width || !rainCanvas.height) resizeRainCanvas();
-      if (!rainLastTs) rainLastTs = ts;
-      const dt = Math.min(0.045, (ts - rainLastTs) / 1000 || 0.016);
-      rainLastTs = ts;
+    const rainDrops = [];
+    let gustPhase = Math.random() * Math.PI * 2;
 
-      const width = rainCanvas.clientWidth || window.innerWidth;
-      const height = rainCanvas.clientHeight || window.innerHeight;
-      const gust = rainGustState(ts);
-      const vxBase = Math.cos(gust.radians) * gust.speed;
-      const vyBase = Math.sin(gust.radians) * gust.speed;
+    function initRainDrops() {
+      rainDrops.length = 0;
+      const count = Math.max(150, Math.floor(window.innerWidth / 7));
+      for (let i = 0; i < count; i++) {
+        rainDrops.push({
+          x: Math.random() * (window.innerWidth + 200) - 100,
+          y: Math.random() * (window.innerHeight + 200) - 100,
+          length: 14 + Math.random() * 30,
+          speed: 7 + Math.random() * 10,
+          thickness: 0.8 + Math.random() * 1.6
+        });
+      }
+    }
 
-      rainCtx.clearRect(0, 0, width, height);
+    function tickRain() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      weatherCtx.clearRect(0, 0, w, h);
+      const mist = weatherCtx.createLinearGradient(0, 0, 0, h);
+      mist.addColorStop(0, 'rgba(244,250,255,0.10)');
+      mist.addColorStop(0.55, 'rgba(216,229,238,0.05)');
+      mist.addColorStop(1, 'rgba(15,29,40,0)');
+      weatherCtx.fillStyle = mist;
+      weatherCtx.fillRect(0, 0, w, h);
+      gustPhase += 0.014;
+      const gust = Math.sin(gustPhase) * 0.9 + Math.sin(gustPhase * 0.41) * 0.45;
+      const angle = 0.48 + gust * 0.2;
+      const dxBase = 14 + gust * 18;
+      const dyBase = 24 + Math.abs(gust) * 7;
 
-      const sky = rainCtx.createLinearGradient(0, 0, 0, height);
-      sky.addColorStop(0, 'rgba(42, 69, 92, 0.08)');
-      sky.addColorStop(0.45, 'rgba(77, 106, 132, 0.045)');
-      sky.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      rainCtx.fillStyle = sky;
-      rainCtx.fillRect(0, 0, width, height);
-
-      rainCtx.lineCap = 'round';
       for (const drop of rainDrops) {
-        const vx = vxBase * drop.driftScale;
-        const vy = vyBase * drop.speedScale;
-        drop.x += vx * dt;
-        drop.y += vy * dt;
-
-        const tailX = drop.x - Math.cos(gust.radians) * drop.length;
-        const tailY = drop.y - Math.sin(gust.radians) * drop.length;
-
-        rainCtx.beginPath();
-        rainCtx.moveTo(tailX, tailY);
-        rainCtx.lineTo(drop.x, drop.y);
-        rainCtx.strokeStyle = `rgba(141, 176, 205, ${drop.alpha})`;
-        rainCtx.lineWidth = drop.thickness;
-        rainCtx.stroke();
-
-        if (drop.y > height + 80 || drop.x > width + 140 || drop.x < -180) {
-          Object.assign(drop, makeRainDrop(false));
-          if (gust.gust > 0.8 && Math.random() < 0.55) {
-            drop.x = -100 - Math.random() * 120;
-          }
+        drop.x += dxBase + drop.speed * angle;
+        drop.y += dyBase + drop.speed;
+        if (drop.y - drop.length > h || drop.x - drop.length > w + 40) {
+          drop.x = Math.random() * w - 120;
+          drop.y = -40 - Math.random() * h * 0.25;
         }
+
+        weatherCtx.beginPath();
+        weatherCtx.moveTo(drop.x, drop.y);
+        weatherCtx.lineTo(drop.x - (drop.length * (0.5 + angle)), drop.y - drop.length * 1.25);
+        weatherCtx.strokeStyle = 'rgba(220, 238, 252, 0.42)';
+        weatherCtx.lineWidth = drop.thickness;
+        weatherCtx.stroke();
       }
 
-      if (gust.gust > 0.82) {
-        rainCtx.strokeStyle = 'rgba(120, 161, 194, 0.12)';
-        rainCtx.lineWidth = 2.2;
-        for (let i = 0; i < 5; i++) {
-          const y = (height / 6) * i + ((ts / 14) % (height / 6));
-          rainCtx.beginPath();
-          rainCtx.moveTo(-80, y);
-          rainCtx.lineTo(width * 0.4, y + 42 + i * 6);
-          rainCtx.stroke();
-        }
-      }
-
-      rainFrame = requestAnimationFrame(drawRain);
-    }
-
-    function startRain() {
-      if (rainFrame) cancelAnimationFrame(rainFrame);
-      rainLastTs = 0;
-      resizeRainCanvas();
-      rainFrame = requestAnimationFrame(drawRain);
+      weatherAnimationFrame = requestAnimationFrame(tickRain);
     }
 
     function lonToX(lonWest, width) {
       const f = (mapMeta.lonWestMax - lonWest) / (mapMeta.lonWestMax - mapMeta.lonWestMin);
       const xPx = mapMeta.left + f * (mapMeta.right - mapMeta.left);
-      return (xPx / mapMeta.imageWidth) * width;
+      return ((xPx - mapCrop.left) / mapCrop.width) * width;
     }
 
     function latToY(latNorth, height) {
       const f = (mapMeta.latNorthMax - latNorth) / (mapMeta.latNorthMax - mapMeta.latNorthMin);
       const yPx = mapMeta.top + f * (mapMeta.bottom - mapMeta.top);
-      return (yPx / mapMeta.imageHeight) * height;
+      return ((yPx - mapCrop.top) / mapCrop.height) * height;
     }
 
     function pointToCanvas(p, width, height) {
@@ -816,7 +869,7 @@
     function colorForIndex(index) {
       if (index < COLOR_PALETTE.length) return COLOR_PALETTE[index];
       const hue = (index * 53) % 360;
-      return `hsl(${hue} 78% 46%)`;
+      return `hsl(${hue} 85% 58%)`;
     }
 
     function setupYearSelect() {
@@ -832,6 +885,18 @@
 
     function getSelectedStorms() {
       return getStorms().filter(storm => selectedStormIds.has(storm.id));
+    }
+
+    function stormDurationDays(storm) {
+      const trackData = Array.isArray(storm?.trackData) ? storm.trackData : [];
+      if (!trackData.length) return 0;
+      return Math.max(0, elapsedDaysFromStart(storm, trackData[trackData.length - 1]));
+    }
+
+    function animationEndDays(storms = getSelectedStorms()) {
+      let maxDays = 0;
+      for (const storm of storms) maxDays = Math.max(maxDays, stormDurationDays(storm));
+      return maxDays > 0 ? maxDays : 1;
     }
 
     function msForIso(isoString) {
@@ -894,6 +959,7 @@
 
     function setSelection(stormIds) {
       selectedStormIds = new Set(stormIds);
+      currentElapsedDays = Math.min(currentElapsedDays, animationEndDays());
       syncStormCheckboxes();
       updateSelectionSummary();
       renderLegend();
@@ -971,8 +1037,10 @@
         elapsedDays: elapsedDaysFromStart(storm, point)
       });
 
-      if (trackData.length === 1) {
-        const only = enrich(trackData[0]);
+      const enrichedTrack = trackData.map(enrich);
+
+      if (enrichedTrack.length === 1) {
+        const only = enrichedTrack[0];
         return {
           point: only,
           index: 0,
@@ -981,12 +1049,37 @@
         };
       }
 
-      const segmentCount = trackData.length - 1;
-      const scaled = progress * segmentCount;
-      const index = Math.min(Math.floor(scaled), segmentCount - 1);
-      const frac = Math.max(0, Math.min(1, scaled - index));
-      const a = trackData[index];
-      const b = trackData[index + 1];
+      const targetDays = Math.max(0, currentElapsedDays);
+      const finalIndex = enrichedTrack.length - 1;
+      const totalDays = enrichedTrack[finalIndex].elapsedDays ?? 0;
+
+      if (targetDays <= (enrichedTrack[0].elapsedDays ?? 0)) {
+        return {
+          point: enrichedTrack[0],
+          index: 0,
+          frac: 0,
+          pointsToDraw: [enrichedTrack[0]]
+        };
+      }
+
+      if (targetDays >= totalDays) {
+        return {
+          point: enrichedTrack[finalIndex],
+          index: Math.max(0, finalIndex - 1),
+          frac: 1,
+          pointsToDraw: enrichedTrack.slice()
+        };
+      }
+
+      let index = 0;
+      while (index < finalIndex - 1 && enrichedTrack[index + 1].elapsedDays < targetDays) {
+        index += 1;
+      }
+
+      const a = enrichedTrack[index];
+      const b = enrichedTrack[index + 1];
+      const spanDays = (b.elapsedDays ?? targetDays) - (a.elapsedDays ?? targetDays);
+      const frac = spanDays > 0 ? Math.max(0, Math.min(1, (targetDays - a.elapsedDays) / spanDays)) : 0;
 
       const aMs = msForIso(a.isoTime);
       const bMs = msForIso(b.isoTime);
@@ -1002,12 +1095,16 @@
         lat: a.lat + (b.lat - a.lat) * frac,
         lon: a.lon + (b.lon - a.lon) * frac,
         windKt: (a.windKt == null || b.windKt == null) ? (frac < 0.5 ? a.windKt : b.windKt) : Math.round(a.windKt + (b.windKt - a.windKt) * frac),
-        pressureMb: (a.pressureMb == null || b.pressureMb == null) ? (frac < 0.5 ? a.pressureMb : b.pressureMb) : Math.round(a.pressureMb + (b.pressureMb - a.pressureMb) * frac)
+        pressureMb: (a.pressureMb == null || b.pressureMb == null) ? (frac < 0.5 ? a.pressureMb : b.pressureMb) : Math.round(a.pressureMb + (b.pressureMb - a.pressureMb) * frac),
+        elapsedDays: targetDays
       };
-      point.elapsedDays = elapsedDaysFromStart(storm, point);
 
-      const pointsToDraw = trackData.slice(0, index + 1).map(enrich);
-      pointsToDraw.push(point);
+      const pointsToDraw = enrichedTrack.slice(0, index + 1);
+      if (frac > 0) {
+        pointsToDraw.push(point);
+      } else {
+        pointsToDraw[pointsToDraw.length - 1] = point;
+      }
 
       return {
         point,
@@ -1047,15 +1144,17 @@
         const currentStatus = fullStatusLabel(point);
         return `
           <div class="legend-item">
-            <div class="legend-left">
-              <span class="color-swatch" style="background:${color}"></span>
-              <div class="legend-name">${escapeHtml(storm.name)}</div>
-            </div>
-            <div class="legend-right">
-              <div class="legend-line strong">${escapeHtml(currentStatus)}</div>
-              <div class="legend-line">${escapeHtml(formatDateTime(point.date, point.time))}</div>
-              <div class="legend-line">${escapeHtml(formatPosition(point))}</div>
-              <div class="legend-line">${escapeHtml(formatWindPressure(point))}</div>
+            <div class="legend-row">
+              <div class="legend-left">
+                <span class="color-swatch" style="background:${color}"></span>
+                <div class="legend-title">${escapeHtml(storm.name)}</div>
+              </div>
+              <div class="legend-right">
+                <div class="status-line">${escapeHtml(currentStatus)}</div>
+                <div>${escapeHtml(formatDateTime(point.date, point.time))}</div>
+                <div>${escapeHtml(formatPosition(point))}</div>
+                <div>${escapeHtml(formatWindPressure(point))}</div>
+              </div>
             </div>
           </div>
         `;
@@ -1233,10 +1332,10 @@
       if (showPressureGraph) activePlots.push({ key: 'pressure', title: 'Central Pressure', unit: 'mb' });
 
       const rect = {
-        x: width * 0.07,
-        y: height * 0.08,
-        w: width * 0.86,
-        h: height * 0.76
+        x: width * 0.08,
+        y: height * 0.1,
+        w: width * 0.84,
+        h: height * 0.74
       };
 
       ctx.save();
@@ -1251,64 +1350,26 @@
       if (!activePlots.length) {
         ctx.font = '14px Arial, Helvetica, sans-serif';
         ctx.fillStyle = '#effffb';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Check Wind and/or Pressure.', rect.x + rect.w / 2, rect.y + rect.h / 2);
+        ctx.fillText('Check Wind and/or Pressure.', rect.x + 16, rect.y + 20);
         ctx.restore();
         return;
       }
 
-      const legendArea = {
-        x: rect.x + 16,
-        y: rect.y + 14,
-        w: rect.w - 32,
-        h: hideNames ? 18 : 34
-      };
-
       const inner = {
-        x: rect.x + 86,
-        y: legendArea.y + legendArea.h + 12,
-        w: rect.w - 114,
-        h: rect.h - legendArea.h - 82
+        x: rect.x + 80,
+        y: rect.y + 30,
+        w: rect.w - 118,
+        h: rect.h - 96
       };
-      const gap = activePlots.length > 1 ? 22 : 0;
+      const gap = activePlots.length > 1 ? 26 : 0;
       const plotHeight = (inner.h - gap * (activePlots.length - 1)) / activePlots.length;
 
       const xForDay = (day, plot) => plot.x + (Math.max(0, Math.min(maxDays, day)) / maxDays) * plot.w;
       const yForWind = (value, plot) => plot.y + plot.h - (Math.max(0, Math.min(windMax, value)) / windMax) * plot.h;
       const yForPressure = (value, plot) => {
-        const clamped = Math.max(pressureMin, Math.min(pressureMax, value));
-        const frac = (clamped - pressureMin) / (pressureMax - pressureMin);
-        return plot.y + plot.h - frac * plot.h;
+        const frac = (pressureMax - value) / (pressureMax - pressureMin);
+        return plot.y + plot.h * frac;
       };
-
-      let legendX = legendArea.x;
-      let legendY = legendArea.y + 8;
-      ctx.font = '12px Arial, Helvetica, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      for (const storm of storms) {
-        const color = stormColors.get(storm.id) || '#34d399';
-        ctx.fillStyle = color;
-        ctx.fillRect(legendX, legendY - 5, 12, 12);
-        if (!hideNames) {
-          ctx.fillStyle = '#effffb';
-          ctx.fillText(storm.name, legendX + 18, legendY + 1);
-          legendX += 108;
-          if (legendX > legendArea.x + legendArea.w - 118) {
-            legendX = legendArea.x;
-            legendY += 18;
-            if (legendY > legendArea.y + legendArea.h) break;
-          }
-        } else {
-          legendX += 22;
-          if (legendX > legendArea.x + legendArea.w - 30) {
-            legendX = legendArea.x;
-            legendY += 18;
-            if (legendY > legendArea.y + legendArea.h) break;
-          }
-        }
-      }
 
       activePlots.forEach((plotInfo, idx) => {
         const plot = {
@@ -1345,7 +1406,7 @@
         ctx.stroke();
 
         ctx.save();
-        ctx.translate(plot.x - 60, plot.y + plot.h / 2);
+        ctx.translate(plot.x - 56, plot.y + plot.h / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = '#effffb';
         ctx.font = '700 13px Arial, Helvetica, sans-serif';
@@ -1377,10 +1438,13 @@
             const x = plot.x + (plot.w / 6) * i;
             ctx.fillText(day.toFixed(1), x, bottom + 8);
           }
+          ctx.font = '700 13px Arial, Helvetica, sans-serif';
+          ctx.fillText('Days Elapsed', plot.x + plot.w / 2, bottom + 28);
+          ctx.font = '12px Arial, Helvetica, sans-serif';
         }
 
         for (const { storm, state } of states) {
-          const color = stormColors.get(storm.id) || '#34d399';
+          const color = stormColors.get(storm.id) || '#ef4444';
           const series = state.pointsToDraw;
           const points = [];
 
@@ -1414,11 +1478,24 @@
         }
       });
 
-      ctx.fillStyle = '#effffb';
-      ctx.font = '700 14px Arial, Helvetica, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillText('Days Elapsed', inner.x + inner.w / 2, inner.y + inner.h + 30);
+      let legendX = rect.x + 16;
+      let legendY = rect.y + rect.h - 18;
+      ctx.font = '12px Arial, Helvetica, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      for (const storm of storms) {
+        const color = stormColors.get(storm.id) || '#ef4444';
+        ctx.fillStyle = color;
+        ctx.fillRect(legendX, legendY - 5, 12, 12);
+        ctx.fillStyle = '#effffb';
+        ctx.fillText(storm.name, legendX + 18, legendY + 1);
+        legendX += 108;
+        if (legendX > rect.x + rect.w - 120) {
+          legendX = rect.x + 16;
+          legendY -= 18;
+          if (legendY < rect.y + 48) break;
+        }
+      }
 
       ctx.restore();
     }
@@ -1474,9 +1551,7 @@
         ctx.stroke();
         ctx.globalAlpha = 1;
 
-        if (!hideNames) {
-          drawLabel(storm.name, current.x, current.y, color, width, height);
-        }
+        drawLabel(storm.name, current.x, current.y, color, width, height);
       }
 
       if (showGraph) {
@@ -1490,9 +1565,10 @@
       const elapsed = ts - lastTs;
       lastTs = ts;
 
-      progress += (elapsed / baseDurationMs) * speedMultiplier;
-      if (progress >= 1) {
-        progress = 1;
+      const endDays = animationEndDays();
+      currentElapsedDays += (elapsed / baseDurationMs) * speedMultiplier * endDays;
+      if (currentElapsedDays >= endDays) {
+        currentElapsedDays = endDays;
         renderLegend();
         draw();
         pause();
@@ -1519,7 +1595,7 @@
 
     function reset() {
       pause();
-      progress = 0;
+      currentElapsedDays = 0;
       renderLegend();
       draw();
     }
@@ -1534,7 +1610,7 @@
       setText(selectionDetail, 'Reading file.');
       legendList.innerHTML = '<div class="muted-empty">Loading season data...</div>';
       stormChecklist.innerHTML = '<div class="muted-empty">Loading season data...</div>';
-      progress = 0;
+      currentElapsedDays = 0;
 
       try {
         const response = await fetch(`atlantic_hurricanes_${selectedYear}.json`, { cache: 'no-store' });
@@ -1603,11 +1679,6 @@
       draw();
     });
 
-    hideNamesToggle.addEventListener('input', () => {
-      hideNames = hideNamesToggle.checked;
-      draw();
-    });
-
     speedRange.addEventListener('input', () => {
       speedMultiplier = Number(speedRange.value);
       speedValue.textContent = speedMultiplier.toFixed(1) + '×';
@@ -1615,12 +1686,12 @@
 
     window.addEventListener('resize', () => {
       resizeCanvas();
-      resizeRainCanvas();
+      resizeWeatherCanvas();
     });
     mapImage.addEventListener('load', () => {
       resizeCanvas();
-      resizeRainCanvas();
-      startRain();
+      resizeWeatherCanvas();
+      if (!weatherAnimationFrame) tickRain();
       setupYearSelect();
       syncGraphControlsVisibility();
       loadSeason(selectedYear);
@@ -1628,8 +1699,8 @@
 
     if (mapImage.complete) {
       resizeCanvas();
-      resizeRainCanvas();
-      startRain();
+      resizeWeatherCanvas();
+      if (!weatherAnimationFrame) tickRain();
       setupYearSelect();
       syncGraphControlsVisibility();
       loadSeason(selectedYear);
